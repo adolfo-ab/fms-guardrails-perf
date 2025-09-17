@@ -55,7 +55,7 @@ metadata:
   name: qwen25
   labels:
     opendatahub.io/dashboard: 'true'
-    #networking.kserve.io/visibility: exposed
+    networking.kserve.io/visibility: exposed
   annotations:
     openshift.io/display-name: qwen25
     serving.knative.openshift.io/enablePassthrough: 'true'

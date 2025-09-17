@@ -23,5 +23,5 @@ spec:
       runtime: guardrails-detector-runtime-hap
       storage:
         key:  aws-connection-data-connection
-        path: jailbreak-classifier
+        path: DETECTOR_MODEL
 ---

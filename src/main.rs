@@ -8,14 +8,16 @@ async fn loadtest_inference(user: &mut GooseUser) -> TransactionResult {
     let scenario = std::env::var("SCENARIO")
         .unwrap_or_else(|_| "SCENARIO environment variable not set".to_string());
 
-    match scenario.as_str() {
-        "baseline" => {
-            let payload = serde_json::json!({
+    let payload = serde_json::json!({
                 "model": "qwen25",
                 "messages": [{"role": "user", "content": TEST_PROMPT}],
                 "temperature": 0
             });
 
+
+    match scenario.as_str() {
+        
+        "baseline" => {
             let reqwest_request_builder = user
                 .get_request_builder(&GooseMethod::Post, "/v1/chat/completions")?
                 .header("Content-Type", "application/json")
@@ -29,12 +31,6 @@ async fn loadtest_inference(user: &mut GooseUser) -> TransactionResult {
             user.request(goose_request).await?;
         }
         "guardrails" => {
-            let payload = serde_json::json!({
-                "model": "qwen25",
-                "messages": [{"role": "user", "content": TEST_PROMPT}],
-                "temperature": 0
-            });
-
             let reqwest_request_builder = user
                 .get_request_builder(&GooseMethod::Post, "/all/v1/chat/completions")?
                 .header("Content-Type", "application/json")

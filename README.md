@@ -1,7 +1,7 @@
-# FMS GuardrailsOrchestrator Performance Test
+# FMS Guardrails Orchestrator Performance Test
 
-## Goal
-To get an initial assessment of the performance of the FMS Guardrails Orchestrator running on OpenShift AI, compared to a baseline model without guardrails.
+## Overview
+A simple utility to easily set up an environment and run performance tests on the FMS Guardrails Orchestrator.
 
 ## Running performance tests
 ### Prerequisites
@@ -13,7 +13,17 @@ To get an initial assessment of the performance of the FMS Guardrails Orchestrat
 
 ### Running the tests
 This repo has two main components:
-- A bash script to easily deploy an LLM (vLLM+KServeRaw), an arbitrary number of copies of a given detector model, and a configured GuardrailsOrchestrator (with gateway).
+- A bash script to easily deploy an LLM (Qwen2.5-0.5B-Instruct through KServeRaw+vLLM), an arbitrary number of copies of a given detector model, and a configured GuardrailsOrchestrator (with gateway).
 - A utility for running load test scenarios and generating reports, based on [Goose](https://book.goose.rs/).
 
 In order to run the tests:
+1. Run the `setup.sh` script:
+   1. Use all defaults (3 instances of the jailbreak detector): `./setup.sh` 
+   2. Custom parameters: `./setup.sh --num-detectors 2 --detector-name "ibm-hate-and-profanity-detector" --model-path "granite-guardian-hap-38m" --download-model "ibm-granite/granite-guardian-hap-38m"`
+   3. Check the usage for more details: `./setup.sh --help`
+
+2. Run the GooseAttack (i.e. the load testing scenario) passing the necessary arguments and environmental variables:
+   1. In order to test the baseline scenario (model without guardrails) use `SCENARIO="baseline"`: `SCENARIO="baseline" TOKEN=$(oc whoami -t) cargo run --release -- --host $HOST --report-file=report.html --no-reset-metrics --run-time 1m`
+   2. In order to test the FMS Guardrails Orchestrator use `SCENARIO="guardrails"`: `SCENARIO="baseline" TOKEN=$(oc whoami -t) cargo run --release -- --host $HOST --report-file=report.html --no-reset-metrics --run-time 1m`
+
+Where `$HOST` is the ISVC Route or the GuardrailsOrchestrator gateway Route, respectively.

@@ -19,7 +19,6 @@ spec:
   accessModes:
     - ReadWriteOnce
   volumeMode: Filesystem
-  # storageClassName: gp3-csi
   resources:
     requests:
       storage: 300Gi
@@ -27,15 +26,15 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: model-s3-storage-emulator
+  name: model-s3-storage
 labels:
-  app: minio-llms # <--- change this to match label on the pod
+  app: minio-llms
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: minio-llms  # <--- change this to match label on the pod
-  template: # => from here down copy and paste the pods metadata: and spec: sections
+      app: minio-llms
+  template:
     metadata:
       labels:
         app: minio-llms
@@ -56,7 +55,7 @@ spec:
             - -c
             - |
               models=(
-                jackhhao/jailbreak-classifier
+                MODEL_TO_DOWNLOAD
               )
               echo "Starting download"
               for model in "${models[@]}"; do
