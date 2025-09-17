@@ -10,8 +10,8 @@ DETECTOR_TEMPLATE="resources/detector_inference_template.yaml"
 GORCH_YAML="resources/fms-gorch.yaml"
 
 # Number of detector instances to deploy
-NUM_DETECTORS=1
-BASE_DETECTOR_NAME="ibm-hate-and-profanity-detector"
+NUM_DETECTORS=3
+BASE_DETECTOR_NAME="jailbreak-detector"
 
 oc create namespace "$NAMESPACE" --dry-run=client -o yaml | oc apply -f -
 

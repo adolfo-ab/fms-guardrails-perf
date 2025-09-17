@@ -56,7 +56,7 @@ spec:
             - -c
             - |
               models=(
-                ibm-granite/granite-guardian-hap-38m
+                jackhhao/jailbreak-classifier
               )
               echo "Starting download"
               for model in "${models[@]}"; do
