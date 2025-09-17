@@ -54,8 +54,8 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Validate inputs
-if ! [[ "$NUM_DETECTORS" =~ ^[0-9]+$ ]] || [ "$NUM_DETECTORS" -lt 1 ]; then
-    echo "Error: Number of detectors must be a positive integer"
+if ! [[ "$NUM_DETECTORS" =~ ^[0-9]+$ ]] || [ "$NUM_DETECTORS" -lt 0 ]; then
+    echo "Error: Number of detectors must be a non-negative integer"
     exit 1
 fi
 
@@ -66,43 +66,58 @@ DETECTOR_SR_YAML="resources/detector_model.yaml"
 DETECTOR_TEMPLATE="resources/detector_inference_template.yaml"
 GORCH_YAML="resources/fms-gorch.yaml"
 
-echo "Deploying $NUM_DETECTORS detector instances using model '$DETECTOR_MODEL'"
+oc create namespace "$NAMESPACE"
 
-oc create namespace "$NAMESPACE" --dry-run=client -o yaml | oc apply -f -
+if [ "$NUM_DETECTORS" -eq 0 ]; then
+    echo "Deploying only LLM (no detectors, no guardrails)"
 
-# Create model storage with the specified model to download
-TEMP_MODEL_STORAGE="/tmp/model_storage.yaml"
-sed "s|MODEL_TO_DOWNLOAD|$MODEL_TO_DOWNLOAD|g" "$MODEL_STORAGE_TEMPLATE" > "$TEMP_MODEL_STORAGE"
-oc apply -f "$TEMP_MODEL_STORAGE" -n "$NAMESPACE"
-rm "$TEMP_MODEL_STORAGE"
+    # Uncomment the networking visibility annotation in qwen.yaml
+    TEMP_QWEN="/tmp/qwen.yaml"
+    sed 's/#networking.kserve.io\/visibility: exposed/networking.kserve.io\/visibility: exposed/' "$QWEN_YAML" > "$TEMP_QWEN"
 
-oc wait --for=condition=Available deployment/model-s3-storage -n "$NAMESPACE" --timeout=600s
+    oc apply -f "$TEMP_QWEN" -n "$NAMESPACE"
+    rm "$TEMP_QWEN"
 
-oc apply -f "$DETECTOR_SR_YAML" -n "$NAMESPACE"
+    oc wait --for=condition=Ready inferenceservice/qwen25 -n "$NAMESPACE" --timeout=600s
 
-# Create multiple detector InferenceServices
-for i in $(seq 1 $NUM_DETECTORS); do
-    DETECTOR_NAME="${BASE_DETECTOR_NAME}-${i}"
+else
+    echo "Deploying $NUM_DETECTORS detector instances using model '$DETECTOR_MODEL'"
 
-    # Create a temporary YAML file with the detector name and model substituted
-    TEMP_DETECTOR="/tmp/detector_${i}.yaml"
-    sed -e "s/DETECTOR_NAME/$DETECTOR_NAME/g" -e "s/DETECTOR_MODEL/$DETECTOR_MODEL/g" "$DETECTOR_TEMPLATE" > "$TEMP_DETECTOR"
 
-    oc apply -f "$TEMP_DETECTOR" -n "$NAMESPACE"
+    # Create model storage with the specified model to download
+    TEMP_MODEL_STORAGE="/tmp/model_storage.yaml"
+    sed "s|MODEL_TO_DOWNLOAD|$MODEL_TO_DOWNLOAD|g" "$MODEL_STORAGE_TEMPLATE" > "$TEMP_MODEL_STORAGE"
+    oc apply -f "$TEMP_MODEL_STORAGE" -n "$NAMESPACE"
+    rm "$TEMP_MODEL_STORAGE"
 
-    # Clean up temp file
-    rm "$TEMP_DETECTOR"
-done
+    oc wait --for=condition=Available deployment/model-s3-storage -n "$NAMESPACE" --timeout=600s
 
-oc apply -f "$QWEN_YAML" -n "$NAMESPACE"
+    oc apply -f "$DETECTOR_SR_YAML" -n "$NAMESPACE"
 
-# Wait for all detector instances to be ready
-for i in $(seq 1 $NUM_DETECTORS); do
-    DETECTOR_NAME="${BASE_DETECTOR_NAME}-${i}"
-    oc wait --for=condition=Ready inferenceservice/$DETECTOR_NAME -n "$NAMESPACE" --timeout=600s
-done
+    # Create multiple detector InferenceServices
+    for i in $(seq 1 $NUM_DETECTORS); do
+        DETECTOR_NAME="${BASE_DETECTOR_NAME}-${i}"
 
-oc wait --for=condition=Ready inferenceservice/qwen25 -n "$NAMESPACE" --timeout=600s
+        # Create a temporary YAML file with the detector name and model substituted
+        TEMP_DETECTOR="/tmp/detector_${i}.yaml"
+        sed -e "s/DETECTOR_NAME/$DETECTOR_NAME/g" -e "s/DETECTOR_MODEL/$DETECTOR_MODEL/g" "$DETECTOR_TEMPLATE" > "$TEMP_DETECTOR"
 
-sleep 30
-oc apply -f "$GORCH_YAML" -n "$NAMESPACE"
+        oc apply -f "$TEMP_DETECTOR" -n "$NAMESPACE"
+
+        # Clean up temp file
+        rm "$TEMP_DETECTOR"
+    done
+
+    oc apply -f "$QWEN_YAML" -n "$NAMESPACE"
+
+    # Wait for all detector instances to be ready
+    for i in $(seq 1 $NUM_DETECTORS); do
+        DETECTOR_NAME="${BASE_DETECTOR_NAME}-${i}"
+        oc wait --for=condition=Ready inferenceservice/$DETECTOR_NAME -n "$NAMESPACE" --timeout=600s
+    done
+
+    oc wait --for=condition=Ready inferenceservice/qwen25 -n "$NAMESPACE" --timeout=600s
+
+    sleep 30
+    oc apply -f "$GORCH_YAML" -n "$NAMESPACE"
+fi
