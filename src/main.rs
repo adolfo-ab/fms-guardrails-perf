@@ -10,31 +10,33 @@ async fn loadtest_inference(user: &mut GooseUser) -> TransactionResult {
 
     match scenario.as_str() {
         "baseline" => {
-            // Create a Reqwest RequestBuilder object and configure authorization
-            let reqwest_request_builder = user
-                .get_request_builder(&GooseMethod::Get, "/v1/models")?
-                .header("Authorization", token);
+            let payload = serde_json::json!({
+                "model": "qwen25",
+                "messages": [{"role": "user", "content": TEST_PROMPT}],
+                "temperature": 0
+            });
 
-            // Add the manually created RequestBuilder and build a GooseRequest object
+            let reqwest_request_builder = user
+                .get_request_builder(&GooseMethod::Post, "/v1/chat/completions")?
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Content-Type", "application/json")
+                .json(&payload);
+
             let goose_request = GooseRequest::builder()
                 .set_request_builder(reqwest_request_builder)
                 .build();
 
-            // Make the actual request
             user.request(goose_request).await?;
         }
         "guardrails" => {
-            // Create a Reqwest RequestBuilder object and configure authorization
             let reqwest_request_builder = user
                 .get_request_builder(&GooseMethod::Get, "/v1/models")?
                 .header("Authorization", token);
 
-            // Add the manually created RequestBuilder and build a GooseRequest object
             let goose_request = GooseRequest::builder()
                 .set_request_builder(reqwest_request_builder)
                 .build();
 
-            // Make the actual request
             user.request(goose_request).await?;
         }
         _ => {
