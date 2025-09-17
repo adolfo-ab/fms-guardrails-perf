@@ -19,7 +19,7 @@ async fn loadtest_inference(user: &mut GooseUser) -> TransactionResult {
             let reqwest_request_builder = user
                 .get_request_builder(&GooseMethod::Post, "/v1/chat/completions")?
                 .header("Content-Type", "application/json")
-                .header("Authorization", format!("Bearer {}", token))
+                .bearer_auth(token)
                 .json(&payload);
 
             let goose_request = GooseRequest::builder()
