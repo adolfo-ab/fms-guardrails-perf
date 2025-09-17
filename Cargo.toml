@@ -1,0 +1,9 @@
+[package]
+name = "fms-guardrails-perf"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+goose = "^0.18"
+tokio = "^1"
+clap = { version = "4.0", features = ["derive"] }
