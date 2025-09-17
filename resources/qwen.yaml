@@ -63,6 +63,7 @@ metadata:
     serving.kserve.io/deploymentMode: RawDeployment
     sidecar.istio.io/inject: 'true'
     sidecar.istio.io/rewriteAppHTTPProbers: 'true'
+    haproxy.router.openshift.io/timeout: 600s
 spec:
   predictor:
     maxReplicas: 1
@@ -74,11 +75,11 @@ spec:
       resources:
         limits:
           cpu: '2'
-          memory: 8Gi
+          memory: 10Gi
           nvidia.com/gpu: '1'
         requests:
           cpu: '2'
-          memory: 4Gi
+          memory: 8Gi
           nvidia.com/gpu: '1'
       runtime: vllm-runtime
       storageUri: oci://quay.io/redhat-ai-services/modelcar-catalog@sha256:b96bd7aac6d2d6d0ec86166037e68fdff31152588846ffbd9e8fc41dd571b9e8
