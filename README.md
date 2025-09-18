@@ -2,6 +2,7 @@
 
 ## Overview
 A simple utility to easily set up an environment and run performance tests on the FMS Guardrails Orchestrator.
+It will set up a namespace with an LLM (KServeRaw+vLLM), N copies of the same detector model, the GuardrailsOrchestrator, run a load testing scenario using [Goose 🪿](https://book.goose.rs/) (which can easily be used generate a report in different formats). 
 
 ---
 
